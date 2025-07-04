@@ -46,3 +46,4 @@ Thumbs.db
 # Cache
 cache/
 *.cache deployment.zip
+api/vendor/
