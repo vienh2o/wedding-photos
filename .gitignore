@@ -45,4 +45,4 @@ Thumbs.db
 
 # Cache
 cache/
-*.cache 
+*.cache deployment.zip
