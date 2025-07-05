@@ -63,4 +63,4 @@ jobs:
           app-name: 'vienwedding'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5D20251E3BA7406F9116F4AD2BC7BE18 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E35A591C10DB4B8F9084879A87DCA17E }}
