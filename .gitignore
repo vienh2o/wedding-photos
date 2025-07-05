@@ -2,18 +2,6 @@
 /vendor/
 composer.lock
 
-# Google Drive API credentials
-/credentials/
-*.json
-
-# Temporary upload files
-/uploads/
-*.tmp
-
-# Data files
-/data/
-*.json
-
 # Logs
 *.log
 logs/
