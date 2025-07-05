@@ -630,7 +630,7 @@ echo SITE_NAME;
                     body: formData
                 });
 
-                const result = await response.json();
+                const result = await response.text();
                 console.log('Response:', result);
 
                 if (result.success) {
