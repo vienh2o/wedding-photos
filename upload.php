@@ -99,9 +99,9 @@ try {
         returnJsonError('No files were uploaded');
     }
 
-    if (empty($files)) {
-        returnJsonError('No valid files were uploaded');
-    }
+    #if (empty($files)) {
+    #    returnJsonError('No valid files were uploaded');
+    #}
 
     // Check if Google Drive is configured
     $googleDriveConfigured = !empty(GOOGLE_DRIVE_FOLDER_ID) && file_exists(GOOGLE_APPLICATION_CREDENTIALS);
