@@ -617,7 +617,7 @@ echo SITE_NAME;
                 progressText.textContent = `Uploading ${files.length} file(s)...`;
                 progressFill.style.width = '0%';
                 
-                const response = await fetch('uploadFile.php', {
+                const response = await fetch('upload.php', {
                     method: 'POST',
                     body: formData
                 });

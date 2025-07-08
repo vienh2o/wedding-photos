@@ -110,4 +110,4 @@ RewriteRule ^api/(.*)$ api/$1 [L]
 #RewriteRule ^upload$ upload-fallback.php [L]
 
 # Security: Block access to sensitive directories
-RewriteRule ^(vendor|data)/.*\.(php|log)$ - [F,L] 
+#RewriteRule ^(vendor|data)/.*\.(php|log)$ - [F,L] 
