@@ -472,21 +472,13 @@ echo SITE_NAME;
                         <div class="stat-number" id="statImages"><?php echo $stats['total_images']; ?></div>
                         <div class="stat-label">Photos</div>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="statVideos"><?php echo $stats['total_videos']; ?></div>
-                        <div class="stat-label">Videos</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="statTotal"><?php echo $stats['total_uploads']; ?></div>
-                        <div class="stat-label">Total</div>
-                    </div>
                 </div>
             </div>
             <div class="gallery-grid" id="galleryGrid"></div>
             <div class="no-images" id="noImages" style="display:none;">
                 <i class="fas fa-camera"></i>
                 <h3>No photos uploaded yet</h3>
-                <p>Be the first to share your special moments! Upload your wedding photos and videos above.</p>
+                <p>Be the first to share your special moments! Upload your wedding photos above.</p>
             </div>
             <div id="galleryLoading" style="text-align:center; margin:30px 0; display:none; color:#667eea; font-size:1.2rem;">
                 <i class="fas fa-spinner fa-spin"></i> Loading more photos...

@@ -13,16 +13,16 @@
 
 // Google Drive API Configuration
 define('GOOGLE_APPLICATION_CREDENTIALS', __DIR__ . '/credentials/service-account-key.json');
-define('GOOGLE_DRIVE_FOLDER_ID', '15m9xDp7rAXheOP0DVbAY4CJtbbWvS4Xm'); // Your Google Drive folder ID where files will be uploaded
+define('GOOGLE_DRIVE_FOLDER_ID', '19nGhLZpltbQ7OltoidhhagpfB4Oy51Ax'); // Your Google Drive folder ID where files will be uploaded
 
 // Upload Configuration
 define('MAX_FILE_SIZE', 100 * 1024 * 1024); // 100MB
 define('ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
-define('ALLOWED_VIDEO_TYPES', ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm']);
+// define('ALLOWED_VIDEO_TYPES', ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm']); // No longer used, only photos allowed
 
 // Website Configuration
 define('SITE_NAME', 'Vien & Thao Guests Photos');
-define('SITE_DESCRIPTION', 'Share your photos and videos from our wedding day! Up to 20 images or videos per upload.');
+define('SITE_DESCRIPTION', 'Share your photos from our wedding day! Up to 20 images per upload.');
 define('UPLOAD_SUCCESS_MESSAGE', 'Thank you! Your file has been uploaded successfully.');
 define('UPLOAD_ERROR_MESSAGE', 'Sorry, there was an error uploading your file. Please try again.');
 

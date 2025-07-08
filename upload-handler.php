@@ -387,11 +387,11 @@ function validateFileDirect($file) {
     }
 
     // Check file type
-    $allowedTypes = array_merge(ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES);
+    $allowedTypes = ALLOWED_IMAGE_TYPES;
     if (!in_array($file['type'], $allowedTypes)) {
         return [
             'valid' => false,
-            'error' => 'File type not allowed (' . $file['type'] . '). Please upload images (JPEG, PNG, GIF, WebP) or videos (MP4, AVI, MOV, WMV, FLV, WebM)'
+            'error' => 'File type not allowed (' . $file['type'] . '). Please upload images (JPEG, PNG, GIF, WebP)'
         ];
     }
 
