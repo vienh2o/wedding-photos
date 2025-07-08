@@ -15,13 +15,12 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 // Function to return JSON error
 function returnJsonError($message, $code = 500) {
-    // Clear any output buffer
     ob_clean();
-    
     http_response_code($code);
     echo json_encode([
         'success' => false,
-        'error' => $message
+        'error' => $message,
+        'code' => $code
     ]);
     exit;
 }
@@ -99,9 +98,9 @@ try {
         returnJsonError('No files were uploaded');
     }
 
-    #if (empty($files)) {
-    #    returnJsonError('No valid files were uploaded');
-    #}
+    //if (empty($files)) {
+    //    returnJsonError('No valid files were uploaded');
+    //}
 
     // Check if Google Drive is configured
     $googleDriveConfigured = !empty(GOOGLE_DRIVE_FOLDER_ID) && file_exists(GOOGLE_APPLICATION_CREDENTIALS);
