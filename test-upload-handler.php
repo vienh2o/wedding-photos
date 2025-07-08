@@ -3,14 +3,14 @@
  * Test script to verify upload handler returns clean JSON
  */
 
-echo "=== Testing Upload Handler ===\n\n";
+echo "=== Testing Upload Handler (uploadFile.php) ===\n\n";
 
 // Test 1: Check if upload handler exists
 echo "1. Upload Handler Check:\n";
-if (file_exists('upload-handler.php')) {
-    echo "   ✓ upload-handler.php exists\n";
+if (file_exists('uploadFile.php')) {
+    echo "   ✓ uploadFile.php exists\n";
 } else {
-    echo "   ✗ upload-handler.php missing\n";
+    echo "   ✗ uploadFile.php missing\n";
     exit;
 }
 
@@ -23,7 +23,7 @@ $context = stream_context_create([
     ]
 ]);
 
-$response = file_get_contents('http://localhost:8001/upload-handler.php', false, $context);
+$response = file_get_contents('http://localhost:8001/uploadFile.php', false, $context);
 echo "   Response: " . substr($response, 0, 100) . "...\n";
 
 // Test 3: Test POST request without file
@@ -35,7 +35,7 @@ $context = stream_context_create([
     ]
 ]);
 
-$response = file_get_contents('http://localhost:8001/upload-handler.php', false, $context);
+$response = file_get_contents('http://localhost:8001/uploadFile.php', false, $context);
 echo "   Response: " . substr($response, 0, 100) . "...\n";
 
 // Test 4: Check if response is valid JSON

@@ -423,9 +423,9 @@ echo SITE_NAME;
             <div class="upload-icon">
                 <i class="fas fa-cloud-upload-alt"></i>
             </div>
-            <div class="upload-text">Drop your photos and videos here</div>
+            <div class="upload-text">Drop your photos here</div>
             <div class="upload-subtext">or click to browse files (multiple files supported)</div>
-            <input type="file" class="file-input" id="fileInput" accept="image/*,video/*" multiple>
+            <input type="file" class="file-input" id="fileInput" accept="image/*" multiple>
         </div>
 
         <button class="upload-btn" id="uploadBtn" disabled>
@@ -617,7 +617,7 @@ echo SITE_NAME;
                 progressText.textContent = `Uploading ${files.length} file(s)...`;
                 progressFill.style.width = '0%';
                 
-                const response = await fetch('upload-handler.php', {
+                const response = await fetch('uploadFile.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -765,5 +765,4 @@ echo SITE_NAME;
         }
     </script>
 </body>
-</html> 
 </html> 
