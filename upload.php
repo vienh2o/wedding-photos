@@ -4,8 +4,8 @@ ob_start();
 
 // Error handling wrapper for uploads
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // Don't display errors, we'll handle them
-ini_set('log_errors', 1); // Log errors instead of displaying them
+ini_set('display_errors', 0); // Don't display errors, we'll handle them
+ini_set('log_errors', 0); // Log errors instead of displaying them
 
 // Set headers for JSON response
 header('Content-Type: application/json');
