@@ -2,6 +2,9 @@
 // Prevent any output before JSON
 ob_start();
 
+// Include autoloader for classes
+require_once 'vendor/autoload.php';
+
 // Error handling wrapper for uploads
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Don't display errors, we'll handle them
@@ -182,7 +185,6 @@ function handleLocalUploadDirect($file) {
 
 function handleGoogleDriveUploadDirect($file) {
     try {
-        require_once 'vendor/autoload.php';
         require_once 'src/UploadHandler.php';
         
         $uploadHandler = new \WeddingUpload\UploadHandler();
@@ -305,7 +307,6 @@ function handleMultipleLocalUploads($files) {
 
 function handleMultipleGoogleDriveUploads($files) {
     try {
-        require_once 'vendor/autoload.php';
         require_once 'src/UploadHandler.php';
         
         $uploadHandler = new \WeddingUpload\UploadHandler();
