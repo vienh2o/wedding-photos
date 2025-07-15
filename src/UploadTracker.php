@@ -36,7 +36,7 @@ class UploadTracker
             'upload_time' => date('Y-m-d H:i:s'),
             'timestamp' => time(),
             'is_image' => $this->isImage($fileData['mime_type'] ?? ''),
-            'thumbnail_url' => $this->generateThumbnailUrl($fileData['file_id'], $fileData['mime_type'] ?? '')
+            'thumbnail_url' => $this->generateThumbnailUrl($fileData['file_id'], $fileData['mime_type'] ?? '', $fileData['web_link'] ?? '', $fileData['file_name'] ?? '')
         ];
 
         // Add to beginning of array (most recent first)
@@ -57,6 +57,14 @@ class UploadTracker
             return $upload['is_image'] ?? false;
         });
         $images = array_values($images); // reindex
+        
+        // Fix thumbnail URLs for existing uploads that have placeholder URLs
+        foreach ($images as &$image) {
+            if (strpos($image['thumbnail_url'], 'data:image/svg+xml;base64,') === 0 && !empty($image['web_link'])) {
+                $image['thumbnail_url'] = $image['web_link'];
+            }
+        }
+        
         return array_slice($images, $offset, $limit);
     }
 
@@ -89,40 +97,46 @@ class UploadTracker
         return strpos($mimeType, 'image/') === 0;
     }
 
-    private function generateThumbnailUrl($fileId, $mimeType)
+    private function generateThumbnailUrl($fileId, $mimeType, $webLink = '', $filename = '')
     {
         if (!$this->isImage($mimeType)) {
             return '';
         }
         
         // For local storage, use the web_link if available, otherwise generate a local URL
-        return $this->createLocalThumbnail($fileId);
+        return $this->createLocalThumbnail($fileId, $webLink, $filename);
     }
 
-    private function createLocalThumbnail($fileId)
+    private function createLocalThumbnail($fileId, $webLink = '', $filename = '')
     {
-        // Get the upload data to find the filename
-        $uploads = $this->getUploads();
-        $upload = null;
-        
-        // Find the upload by file_id
-        foreach ($uploads as $u) {
-            if ($u['file_id'] === $fileId) {
-                $upload = $u;
-                break;
+        // Use the web_link if available (from enhanced local storage)
+        if (!empty($webLink)) {
+            return $webLink;
+        } elseif (!empty($filename)) {
+            // Generate a local URL based on filename
+            return $this->generateLocalUrl($filename);
+        } else {
+            // Fallback: try to find the upload by file_id in existing uploads
+            $uploads = $this->getUploads();
+            $upload = null;
+            
+            // Find the upload by file_id
+            foreach ($uploads as $u) {
+                if ($u['file_id'] === $fileId) {
+                    $upload = $u;
+                    break;
+                }
+            }
+            
+            if ($upload && !empty($upload['web_link'])) {
+                return $upload['web_link'];
+            } elseif ($upload && !empty($upload['filename'])) {
+                return $this->generateLocalUrl($upload['filename']);
             }
         }
         
-        if ($upload && !empty($upload['web_link'])) {
-            // Use the web_link if available (from enhanced local storage)
-            return $upload['web_link'];
-        } elseif ($upload && !empty($upload['filename'])) {
-            // Generate a local URL based on filename
-            return $this->generateLocalUrl($upload['filename']);
-        } else {
-            // Fallback to placeholder
-            return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNTAgNzBDMTc2LjU2OSA3MCAyMDAgOTMuNDMxIDIwMCAxMjBDMjAwIDE0Ni41NjkgMTc2LjU2OSAxNjAgMTUwIDE2MEMxMjMuNDMxIDE2MCAxMDAgMTQ2LjU2OSAxMDAgMTIwQzEwMCA5My40MzEgMTIzLjQzMSA3MCAxNTAgNzBaIiBmaWxsPSIjRjY3M0VBIi8+CjxwYXRoIGQ9Ik0xNTAgMTMwQzE1OC4yODQgMTMwIDE2NSAxMjMuMjg0IDE2NSAxMTVDMTY1IDEwNi43MTYgMTU4LjI4NCAxMDAgMTUwIDEwMEMxNDEuNzE2IDEwMCAxMzUgMTA2LjcxNiAxMzUgMTE1QzEzNSAxMjMuMjg0IDE0MS43MTYgMTMwIDE1MCAxMzBaIiBmaWxsPSIjRjY3M0VBIi8+Cjwvc3ZnPgo=";
-        }
+        // Fallback to placeholder
+        return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNTAgNzBDMTc2LjU2OSA3MCAyMDAgOTMuNDMxIDIwMCAxMjBDMjAwIDE0Ni41NjkgMTc2LjU2OSAxNjAgMTUwIDE2MEMxMjMuNDMxIDE2MCAxMDAgMTQ2LjU2OSAxMDAgMTIwQzEwMCA5My40MzEgMTIzLjQzMSA3MCAxNTAgNzBaIiBmaWxsPSIjRjY3M0VBIi8+CjxwYXRoIGQ9Ik0xNTAgMTMwQzE1OC4yODQgMTMwIDE2NSAxMjMuMjg0IDE2NSAxMTVDMTY1IDEwNi43MTYgMTU4LjI4NCAxMDAgMTUwIDEwMEMxNDEuNzE2IDEwMCAxMzUgMTA2LjcxNiAxMzUgMTE1QzEzNSAxMjMuMjg0IDE0MS43MTYgMTMwIDE1MCAxMzBaIiBmaWxsPSIjRjY3M0VBIi8+Cjwvc3ZnPgo=";
     }
 
     private function generateLocalUrl($filename)
