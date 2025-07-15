@@ -16,6 +16,74 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// Add at the top, after headers and before main logic
+$CHUNK_SIZE = 1024 * 1024; // 1MB
+$chunkedUploadDir = __DIR__ . '/chunk_uploads/';
+if (!is_dir($chunkedUploadDir)) {
+    mkdir($chunkedUploadDir, 0755, true);
+}
+
+// Check for chunked upload parameters
+$isChunked = isset($_POST['upload_id'], $_POST['chunk_index'], $_POST['total_chunks'], $_POST['file_name']);
+
+if ($isChunked) {
+    $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST['upload_id']);
+    $chunkIndex = intval($_POST['chunk_index']);
+    $totalChunks = intval($_POST['total_chunks']);
+    $fileName = basename($_POST['file_name']);
+    $chunkFile = $chunkedUploadDir . $uploadId . '_' . $chunkIndex . '.part';
+
+    // Save the chunk
+    $input = fopen('php://input', 'rb');
+    $output = fopen($chunkFile, 'wb');
+    stream_copy_to_stream($input, $output);
+    fclose($input);
+    fclose($output);
+
+    // Check if all chunks are present
+    $allChunksPresent = true;
+    for ($i = 0; $i < $totalChunks; $i++) {
+        if (!file_exists($chunkedUploadDir . $uploadId . '_' . $i . '.part')) {
+            $allChunksPresent = false;
+            break;
+        }
+    }
+
+    if ($allChunksPresent) {
+        // Assemble chunks
+        $assembledPath = $chunkedUploadDir . $uploadId . '_assembled_' . $fileName;
+        $out = fopen($assembledPath, 'wb');
+        for ($i = 0; $i < $totalChunks; $i++) {
+            $chunkPath = $chunkedUploadDir . $uploadId . '_' . $i . '.part';
+            $in = fopen($chunkPath, 'rb');
+            stream_copy_to_stream($in, $out);
+            fclose($in);
+            unlink($chunkPath);
+        }
+        fclose($out);
+
+        // Now process as a normal upload (simulate $_FILES)
+        $fakeFile = [
+            'name' => $fileName,
+            'type' => mime_content_type($assembledPath),
+            'tmp_name' => $assembledPath,
+            'error' => UPLOAD_ERR_OK,
+            'size' => filesize($assembledPath)
+        ];
+        // Use enhanced local storage
+        handleEnhancedLocalUploadDirect($fakeFile);
+        // Remove assembled file after processing
+        if (file_exists($assembledPath)) {
+            unlink($assembledPath);
+        }
+        exit;
+    } else {
+        // Respond with chunk received
+        returnJsonSuccess(['message' => "Chunk $chunkIndex/$totalChunks received."]);
+    }
+    exit;
+}
+
 // Function to return JSON error
 function returnJsonError($message, $code = 500) {
     ob_clean();

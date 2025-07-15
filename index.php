@@ -603,59 +603,68 @@ echo SITE_NAME;
         });
 
         async function uploadMultipleFiles(files) {
-            const formData = new FormData();
-            files.forEach(file => {
-                formData.append('files[]', file);
-            });
-
-            // Debug: log FormData
-            for (let [key, value] of formData.entries()) {
-                console.log('FormData entry:', key, value);
-            }
-
-            try {
-                progressText.textContent = `Uploading ${files.length} file(s)...`;
-                progressFill.style.width = '0%';
-                
-                const response = await fetch('upload.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.text();
-                console.log('Response:', result);
-
-                if (result.success) {
-                    // Show overall success message
-                    showMessage(`✓ ${result.success_count} file(s) uploaded successfully!` + 
-                               (result.error_count > 0 ? ` (${result.error_count} failed)` : ''), 'success');
-                    
-                    // Show individual file results
-                    result.results.forEach(fileResult => {
-                        if (fileResult.success) {
-                            showMessage(`✓ ${fileResult.file_name} uploaded successfully!`, 'success');
-                        } else {
-                            showMessage(`✗ ${fileResult.file_name}: ${fileResult.error}`, 'error');
-                        }
-                    });
-
-                    // Update progress to 100%
-                    progressFill.style.width = '100%';
-                    progressText.textContent = 'Upload completed!';
-
-                    // Hide selected files display
-                    selectedFilesContainer.style.display = 'none';
-
-                    // Update gallery with new images
-                    setTimeout(() => {
-                        updateGallery();
-                    }, 1000);
-                } else {
-                    showMessage(`✗ Upload failed: ${result.error}`, 'error');
+            let totalFiles = files.length;
+            let completedFiles = 0;
+            for (const file of files) {
+                progressText.textContent = `Uploading ${file.name}...`;
+                progressFill.style.width = `${(completedFiles / totalFiles) * 100}%`;
+                try {
+                    await uploadFileInChunks(file);
+                    showMessage(`✓ ${file.name} uploaded successfully!`, 'success');
+                } catch (err) {
+                    showMessage(`✗ ${file.name}: ${err.message}`, 'error');
                 }
+                completedFiles++;
+                progressFill.style.width = `${(completedFiles / totalFiles) * 100}%`;
+            }
+            progressText.textContent = 'Upload completed!';
+            // Hide selected files display
+            selectedFilesContainer.style.display = 'none';
+            // Update gallery with new images
+            setTimeout(() => {
+                updateGallery();
+            }, 1000);
+        }
 
-            } catch (error) {
-                showMessage(`✗ Upload failed: ${error.message}`, 'error');
+        async function uploadFileInChunks(file) {
+            const CHUNK_SIZE = 1024 * 1024; // 1MB
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const uploadId = `${file.name.replace(/[^a-zA-Z0-9_-]/g, '')}_${Date.now()}_${Math.floor(Math.random()*1e6)}`;
+            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                const start = chunkIndex * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunk = file.slice(start, end);
+                const formData = new FormData();
+                formData.append('upload_id', uploadId);
+                formData.append('chunk_index', chunkIndex);
+                formData.append('total_chunks', totalChunks);
+                formData.append('file_name', file.name);
+                // For chunked upload, send the chunk as the request body
+                await fetchChunk(formData, chunk, chunkIndex, totalChunks, file.name);
+                progressText.textContent = `Uploading ${file.name} (${chunkIndex+1}/${totalChunks})...`;
+                progressFill.style.width = `${((chunkIndex+1)/totalChunks)*100}%`;
+            }
+        }
+
+        async function fetchChunk(formData, chunk, chunkIndex, totalChunks, fileName) {
+            // We need to send the chunk as the body, and the metadata as form fields
+            // We'll use a custom request, not FormData, for chunked upload
+            const params = new URLSearchParams();
+            params.append('upload_id', formData.get('upload_id'));
+            params.append('chunk_index', formData.get('chunk_index'));
+            params.append('total_chunks', formData.get('total_chunks'));
+            params.append('file_name', formData.get('file_name'));
+            const url = `upload.php?${params.toString()}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                body: chunk,
+                headers: {
+                    // No Content-Type header so browser sets correct boundary
+                }
+            });
+            const result = await response.json();
+            if (!result.success && chunkIndex === totalChunks-1) {
+                throw new Error(result.error || `Failed to upload chunk for ${fileName}`);
             }
         }
 
