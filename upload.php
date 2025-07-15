@@ -23,10 +23,21 @@ if (!is_dir($chunkedUploadDir)) {
     mkdir($chunkedUploadDir, 0755, true);
 }
 
-// Check for chunked upload parameters
-$isChunked = isset($_POST['upload_id'], $_POST['chunk_index'], $_POST['total_chunks'], $_POST['file_name']);
+// Check for chunked upload parameters (from URL params or POST)
+$isChunked = isset($_GET['upload_id'], $_GET['chunk_index'], $_GET['total_chunks'], $_GET['file_name']) || 
+             isset($_POST['upload_id'], $_POST['chunk_index'], $_POST['total_chunks'], $_POST['file_name']);
 
 if ($isChunked) {
+    // Get parameters from either GET or POST
+    $uploadId = $_GET['upload_id'] ?? $_POST['upload_id'];
+    $chunkIndex = $_GET['chunk_index'] ?? $_POST['chunk_index'];
+    $totalChunks = $_GET['total_chunks'] ?? $_POST['total_chunks'];
+    $fileName = $_GET['file_name'] ?? $_POST['file_name'];
+    
+    $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $uploadId);
+    $chunkIndex = intval($chunkIndex);
+    $totalChunks = intval($totalChunks);
+    $fileName = basename($fileName);
     $uploadId = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST['upload_id']);
     $chunkIndex = intval($_POST['chunk_index']);
     $totalChunks = intval($_POST['total_chunks']);
@@ -70,8 +81,48 @@ if ($isChunked) {
             'error' => UPLOAD_ERR_OK,
             'size' => filesize($assembledPath)
         ];
+        
         // Use enhanced local storage
-        handleEnhancedLocalUploadDirect($fakeFile);
+        try {
+            require_once 'src/EnhancedLocalStorage.php';
+            
+            $storage = new \WeddingUpload\EnhancedLocalStorage();
+            
+            // Check if service is available
+            if (!$storage->isServiceAvailable()) {
+                returnJsonError('Local storage service is not available');
+            }
+
+            // Process the upload
+            $result = $storage->uploadFile($fakeFile);
+            
+            if ($result['success']) {
+                // Track the upload
+                $tracker = new \WeddingUpload\UploadTracker();
+                $tracker->addUpload([
+                    'file_name' => $result['file_name'],
+                    'original_name' => $fakeFile['name'],
+                    'file_id' => $result['file_id'],
+                    'web_link' => $result['web_link'],
+                    'mime_type' => $fakeFile['type'],
+                    'file_size' => $fakeFile['size']
+                ]);
+
+                returnJsonSuccess([
+                    'message' => UPLOAD_SUCCESS_MESSAGE,
+                    'file_name' => $result['file_name'],
+                    'file_id' => $result['file_id'],
+                    'web_link' => $result['web_link'],
+                    'local_path' => $result['local_path']
+                ]);
+            } else {
+                returnJsonError($result['error']);
+            }
+
+        } catch (Exception $e) {
+            returnJsonError(DEBUG_MODE ? $e->getMessage() : UPLOAD_ERROR_MESSAGE);
+        }
+        
         // Remove assembled file after processing
         if (file_exists($assembledPath)) {
             unlink($assembledPath);
