@@ -14,6 +14,7 @@
 // Google Drive API Configuration
 define('GOOGLE_APPLICATION_CREDENTIALS', __DIR__ . '/credentials/service-account-key.json');
 define('GOOGLE_DRIVE_FOLDER_ID', '19nGhLZpltbQ7OltoidhhagpfB4Oy51Ax'); // Your Google Drive folder ID where files will be uploaded
+// Note: For service accounts, use a Shared Drive folder ID instead of regular Drive folder
 
 // Upload Configuration
 define('MAX_FILE_SIZE', 100 * 1024 * 1024); // 100MB

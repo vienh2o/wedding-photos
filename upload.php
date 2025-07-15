@@ -105,25 +105,38 @@ try {
     //    returnJsonError('No valid files were uploaded');
     //}
 
-    // Check if Google Drive is configured
+    // Check if Google Drive is configured and working
     $googleDriveConfigured = !empty(GOOGLE_DRIVE_FOLDER_ID) && file_exists(GOOGLE_APPLICATION_CREDENTIALS);
-
-    if (!$googleDriveConfigured) {
-        // Use fallback local storage
-        ob_clean();
-        if ($hasMultipleFiles) {
-            handleMultipleLocalUploads($files);
-        } else {
-            handleLocalUploadDirect($files[0]);
+    
+    // Try Google Drive first, fallback to enhanced local storage
+    if ($googleDriveConfigured) {
+        try {
+            // Test Google Drive service
+            require_once 'src/UploadHandler.php';
+            $uploadHandler = new \WeddingUpload\UploadHandler();
+            
+            if ($uploadHandler->isServiceAvailable()) {
+                // Use Google Drive upload
+                ob_clean();
+                if ($hasMultipleFiles) {
+                    handleMultipleGoogleDriveUploads($files);
+                } else {
+                    handleGoogleDriveUploadDirect($files[0]);
+                }
+                return; // Exit if successful
+            }
+        } catch (Exception $e) {
+            // Google Drive failed, fallback to local storage
+            error_log("Google Drive failed, using local storage: " . $e->getMessage());
         }
+    }
+    
+    // Use enhanced local storage as fallback
+    ob_clean();
+    if ($hasMultipleFiles) {
+        handleMultipleEnhancedLocalUploads($files);
     } else {
-        // Use Google Drive upload
-        ob_clean();
-        if ($hasMultipleFiles) {
-            handleMultipleGoogleDriveUploads($files);
-        } else {
-            handleGoogleDriveUploadDirect($files[0]);
-        }
+        handleEnhancedLocalUploadDirect($files[0]);
     }
 
 } catch (Exception $e) {
@@ -418,6 +431,124 @@ function validateFileDirect($file) {
     }
 
     return ['valid' => true];
+}
+
+function handleEnhancedLocalUploadDirect($file) {
+    try {
+        require_once 'src/EnhancedLocalStorage.php';
+        
+        $storage = new \WeddingUpload\EnhancedLocalStorage();
+        
+        // Check if service is available
+        if (!$storage->isServiceAvailable()) {
+            returnJsonError('Local storage service is not available');
+        }
+
+        // Process the upload
+        $result = $storage->uploadFile($file);
+        
+        if ($result['success']) {
+            // Track the upload
+            $tracker = new \WeddingUpload\UploadTracker();
+            $tracker->addUpload([
+                'file_name' => $result['file_name'],
+                'original_name' => $file['name'],
+                'file_id' => $result['file_id'],
+                'web_link' => $result['web_link'],
+                'mime_type' => $file['type'],
+                'file_size' => $file['size']
+            ]);
+
+            returnJsonSuccess([
+                'message' => UPLOAD_SUCCESS_MESSAGE,
+                'file_name' => $result['file_name'],
+                'file_id' => $result['file_id'],
+                'web_link' => $result['web_link'],
+                'local_path' => $result['local_path']
+            ]);
+        } else {
+            returnJsonError($result['error']);
+        }
+
+    } catch (Exception $e) {
+        returnJsonError(DEBUG_MODE ? $e->getMessage() : UPLOAD_ERROR_MESSAGE);
+    }
+}
+
+function handleMultipleEnhancedLocalUploads($files) {
+    try {
+        require_once 'src/EnhancedLocalStorage.php';
+        
+        $storage = new \WeddingUpload\EnhancedLocalStorage();
+        
+        // Check if service is available
+        if (!$storage->isServiceAvailable()) {
+            returnJsonError('Local storage service is not available');
+        }
+
+        $results = [];
+        $successCount = 0;
+        $errorCount = 0;
+
+        foreach ($files as $index => $file) {
+            try {
+                // Process the upload
+                $result = $storage->uploadFile($file);
+                
+                if ($result['success']) {
+                    // Track the upload
+                    $tracker = new \WeddingUpload\UploadTracker();
+                    $tracker->addUpload([
+                        'file_name' => $result['file_name'],
+                        'original_name' => $file['name'],
+                        'file_id' => $result['file_id'],
+                        'web_link' => $result['web_link'],
+                        'mime_type' => $file['type'],
+                        'file_size' => $file['size']
+                    ]);
+
+                    $results[] = [
+                        'index' => $index,
+                        'file_name' => $file['name'],
+                        'success' => true,
+                        'new_filename' => $result['file_name'],
+                        'file_id' => $result['file_id'],
+                        'web_link' => $result['web_link'],
+                        'local_path' => $result['local_path']
+                    ];
+                    $successCount++;
+                } else {
+                    $results[] = [
+                        'index' => $index,
+                        'file_name' => $file['name'],
+                        'success' => false,
+                        'error' => $result['error']
+                    ];
+                    $errorCount++;
+                }
+
+            } catch (Exception $e) {
+                $results[] = [
+                    'index' => $index,
+                    'file_name' => $file['name'],
+                    'success' => false,
+                    'error' => DEBUG_MODE ? $e->getMessage() : 'Upload failed'
+                ];
+                $errorCount++;
+            }
+        }
+
+        returnJsonSuccess([
+            'message' => "Uploaded $successCount file(s) successfully" . ($errorCount > 0 ? ", $errorCount failed" : ""),
+            'results' => $results,
+            'success_count' => $successCount,
+            'error_count' => $errorCount,
+            'total_count' => count($files)
+        ]);
+
+    } catch (Exception $e) {
+        returnJsonError(DEBUG_MODE ? $e->getMessage() : UPLOAD_ERROR_MESSAGE);
+    }
 }
 
 function formatBytesDirect($bytes, $precision = 2) {
