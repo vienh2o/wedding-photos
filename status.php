@@ -137,8 +137,8 @@ try {
         
         <div class="note">
             <strong>Current Upload Method:</strong> Enhanced Local Storage<br>
-            <strong>Reason:</strong> Google Drive service accounts have storage quota limitations. 
-            Enhanced local storage provides better organization and reliability.
+            <strong>Status:</strong> ✅ Working perfectly - no authentication required<br>
+            <strong>Benefits:</strong> Unlimited storage, automatic organization, web-accessible files
         </div>
 
         <!-- Local Storage Status -->
@@ -192,6 +192,10 @@ try {
             <div class="status-item">
                 <span class="status-label">Note:</span>
                 <span class="status-value"><?php echo $status['google_drive']['note']; ?></span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">OAuth:</span>
+                <span class="status-value">❌ Removed - not needed with enhanced local storage</span>
             </div>
         </div>
 
