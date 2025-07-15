@@ -105,33 +105,8 @@ try {
     //    returnJsonError('No valid files were uploaded');
     //}
 
-    // Check if Google Drive is configured and working
-    $googleDriveConfigured = !empty(GOOGLE_DRIVE_FOLDER_ID) && file_exists(GOOGLE_APPLICATION_CREDENTIALS);
-    
-    // Try Google Drive first, fallback to enhanced local storage
-    if ($googleDriveConfigured) {
-        try {
-            // Test Google Drive service
-            require_once 'src/UploadHandler.php';
-            $uploadHandler = new \WeddingUpload\UploadHandler();
-            
-            if ($uploadHandler->isServiceAvailable()) {
-                // Use Google Drive upload
-                ob_clean();
-                if ($hasMultipleFiles) {
-                    handleMultipleGoogleDriveUploads($files);
-                } else {
-                    handleGoogleDriveUploadDirect($files[0]);
-                }
-                return; // Exit if successful
-            }
-        } catch (Exception $e) {
-            // Google Drive failed, fallback to local storage
-            error_log("Google Drive failed, using local storage: " . $e->getMessage());
-        }
-    }
-    
-    // Use enhanced local storage as fallback
+    // Use enhanced local storage as primary method
+    // Google Drive has storage quota limitations with service accounts
     ob_clean();
     if ($hasMultipleFiles) {
         handleMultipleEnhancedLocalUploads($files);

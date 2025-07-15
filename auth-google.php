@@ -24,7 +24,14 @@ try {
     }
     
 } catch (Exception $e) {
-    $message = '<div class="error">❌ Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+    // If there's an error, still try to generate auth URL
+    try {
+        $oauthService = new \WeddingUpload\GoogleDriveOAuthService();
+        $authUrl = $oauthService->getAuthUrl();
+        $message = '<div class="info">🔐 Please authenticate with your Google account to enable Google Drive uploads.</div>';
+    } catch (Exception $e2) {
+        $message = '<div class="error">❌ Error: ' . htmlspecialchars($e2->getMessage()) . '</div>';
+    }
 }
 
 // Handle OAuth callback

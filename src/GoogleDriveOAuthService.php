@@ -38,23 +38,26 @@ class GoogleDriveOAuthService
 
             // If there is no previous token or it's expired
             if ($client->isAccessTokenExpired()) {
-                // Refresh the token if possible, otherwise fetch a new one
+                // Refresh the token if possible, otherwise we need to re-authenticate
                 if ($client->getRefreshToken()) {
                     $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+                    
+                    // Save the token to a file
+                    if (!is_dir(dirname($this->tokenFile))) {
+                        mkdir(dirname($this->tokenFile), 0755, true);
+                    }
+                    file_put_contents($this->tokenFile, json_encode($client->getAccessToken()));
                 } else {
-                    throw new Exception('OAuth token expired and no refresh token available. Please re-authenticate.');
+                    // No refresh token available, service is not authenticated
+                    $this->service = null;
+                    return;
                 }
-                
-                // Save the token to a file
-                if (!is_dir(dirname($this->tokenFile))) {
-                    mkdir(dirname($this->tokenFile), 0755, true);
-                }
-                file_put_contents($this->tokenFile, json_encode($client->getAccessToken()));
             }
 
             $this->service = new Google_Service_Drive($client);
         } catch (Exception $e) {
-            throw new Exception('Failed to initialize Google Drive OAuth service: ' . $e->getMessage());
+            // If there's an error, set service to null (not authenticated)
+            $this->service = null;
         }
     }
 
