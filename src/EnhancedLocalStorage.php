@@ -157,12 +157,13 @@ class EnhancedLocalStorage
 
     private function generateWebUrl($filename)
     {
-        // Generate a web-accessible URL for the file
+        // Generate a web-accessible URL for the file using the image viewer
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $datePath = date('Y-m-d');
         
-        return sprintf('%s://%s/uploads/%s/%s', $protocol, $host, $datePath, $filename);
+        // Use the image viewer script for secure image serving
+        return sprintf('%s://%s/view-image.php?path=%s/%s', $protocol, $host, $datePath, $filename);
     }
 
     private function formatBytes($bytes, $precision = 2)
